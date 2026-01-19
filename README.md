@@ -1,86 +1,57 @@
-This project has been created as part of the 42 curriculum by pedrferr.
+*This project has been created as part of the 42 curriculum by pedrferr.*
 
-Minitalk
-A C program that implements a small client <-> server data exchange using only UNIX signals (SIGUSR1 and SIGUSR2).
+# Minitalk
+A small client-server communication program that sends a string using only UNIX signals (SIGUSR1 and SIGUSR2).
 
-Description
-Minitalk is a low-level communication project where a client sends a string to a server bit by bit using signals.
-The server reconstructs each character from the received bits and prints the message as it arrives (no noticeable delay).
+## Description
+Minitalk is a minimal “message passing” project where two executables communicate without sockets, pipes, or shared memory.
 
-Project Requirements
-- Two executables: `server` and `client`
-- Server must:
-  - Start first
-  - Print its PID on launch
-  - Receive and print messages from multiple clients in a row (no restart needed)
-- Client must:
-  - Receive: server PID + string
-  - Send the string to the server using only signals
-- Allowed signals: SIGUSR1 and SIGUSR2 only
-- Performance constraint:
-  - Output must feel instantaneous
-  - If 100 characters take ~1 second to display, it is considered too slow
+- **server** starts first, prints its PID, and waits for signals.
+- **client** takes the server PID and a message, then sends the message bit by bit using only SIGUSR1 and SIGUSR2.
+- **server** reconstructs each character from 8 received bits and prints the resulting string.
+- An acknowledgment (ACK) mechanism is used to prevent signal loss and keep the transmission fast and reliable.
 
-How It Works (Signal Protocol)
-A common approach is mapping bits to signals:
-- SIGUSR1 => bit 0
-- SIGUSR2 => bit 1
+## Instructions
 
-Server side:
-- Keep a running `current_byte` and `bit_index` (0..7)
-- For each received signal, set the corresponding bit
-- When 8 bits are received, you have a full character:
-  - Print it immediately
-  - Reset state for the next character
-- End-of-message is usually represented by a null terminator (`'\0'`)
+### Build
+```bash
+make
+```
 
-Important Note About Reliability
-Linux does not queue these signals reliably when many are pending.
-For correctness and speed, an ACK-based approach is commonly used:
-- Server sends an acknowledgement signal back to the client after receiving each bit (or each byte)
-- Client only sends the next bit after receiving the ACK
-
-Allowed Functions (Mandatory)
-Typical allowed functions include:
-write, signal, sigaction, kill, getpid, malloc, free, pause, sleep, usleep, exit
-(+ ft_printf if it is your own implementation)
-
-Usage
-Server:
+### Run
+Terminal 1:
+```bash
 ./server
-# prints PID, then waits for signals
+```
 
-Client:
-./client <server_pid> "your message here"
+Terminal 2 (replace `<PID>` with the printed PID):
+```bash
+./client <PID> "Hello from minitalk"
+```
 
-Makefile
-The project includes a Makefile that:
-- Compiles with: -Wall -Wextra -Werror using cc
-- Provides rules: all, clean, fclean, re
-- Avoids unnecessary relinking
-- Builds both `client` and `server`
+### Expected behavior
+- The server prints its PID, then prints the received message.
+- The server can receive multiple messages sequentially without restarting.
 
-Error Handling
-The program should handle invalid inputs robustly, and must not crash.
-Typical cases to handle:
-- Invalid PID (non-numeric or non-existing process)
-- Wrong argument count
-- Signal send failure (kill() error)
+## Implementation Notes
+- Signals represent bits:
+  - `SIGUSR1` = 0
+  - `SIGUSR2` = 1
+- Bits are sent in the order: bit 7 → bit 0.
+- The server rebuilds one byte after receiving 8 bits.
+- End of message is detected by sending a `\0` byte.
+- ACK is used to avoid losing signals under fast sending.
 
-Bonus (If Mandatory Is Perfect)
-- Server sends an ACK to the client after each received message (or per bit/byte)
-- Unicode support (extended encoding)
+## Resources
+- `man signal`
+- `man sigaction`
+- `man kill`
+- `man pause`
+- `man usleep`
 
-Resources
-UNIX signals:
-https://man7.org/linux/man-pages/man7/signal.7.html
-
-sigaction:
-https://man7.org/linux/man-pages/man2/sigaction.2.html
-
-kill:
-https://man7.org/linux/man-pages/man2/kill.2.html
-
-AI Usage
-AI tools were used only to help understand the subject, reason about signal-based communication, and review implementation constraints.
-All implementation decisions and code were written and fully understood by the author.
+## AI Usage
+I used AI as a learning assistant to:
+- clarify how UNIX signals work in practice (handlers, `sigaction`, `SA_SIGINFO`);
+- validate the mental model for bit/byte reconstruction and message termination;
+- review small code snippets for logic errors and suggest minimal fixes consistent with the 42 Norm.
+All core implementation choices and the final code were written and understood by me.
