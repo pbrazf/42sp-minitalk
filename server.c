@@ -38,12 +38,11 @@ static void	handler(int sig, siginfo_t *info, void *ctx)
 	static int				bit_count;
 	int						bit;
 
-	(void)info;
 	(void)ctx;
 
 	/* define o bit do sinal */
 	bit = 0;
-	if (sig == SIGUSR2)
+	if (sig == BIT_1)
 		bit = 1;
 
 	/* acumula no byte (bit 7 -> bit 0) */
@@ -53,25 +52,31 @@ static void	handler(int sig, siginfo_t *info, void *ctx)
 	/* fechou 8 bits = 1 char */
 	if (bit_count == 8)
 	{
-		write(1, &byte, 1);
+		if (byte == '\0')
+			write(1, "\n", 1);
+		else
+			write(1, &byte, 1);
 		byte = 0;
 		bit_count = 0;
 	}
+	if (info)
+		kill(info->si_pid, ACK_SIG); /* confirma recebimento */
 }
 
 int	main(void)
 {
 	struct sigaction	sa;
-	int					pid;
+	pid_t				pid;
 
 	// pega o pid do server
 	pid = getpid();
 
 	/* (temporario) mostra que o server subiu */
-	write(1, "PID: \n", 6);
+	write(1, "PID: ", 5);
 
 	// printa o PID;
 	ft_putnbr_fd(pid, 1);
+	write(1, "\n", 1);
 
 	/* define qual funcao vai rodar quando o sinal chegar */
 	sa.sa_sigaction = handler;
@@ -82,11 +87,9 @@ int	main(void)
 	/* inicializa a mascara de sinais (padrao: nao bloquear nada extra) */
 	sigemptyset(&sa.sa_mask);
 
-	/* liga o handler para SIGUSR1 */
-	sigaction(SIGUSR1, &sa, NULL);
-
-	/* liga o handler para SIGUSR2 */
-	sigaction(SIGUSR2, &sa, NULL);
+	/* liga o handler para BIT_0 e BIT_1 */
+	sigaction(BIT_0, &sa, NULL);
+	sigaction(BIT_1, &sa, NULL);
 
 	/* fica esperando sinais para sempre */
 	while (1)
