@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   utils.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: pedrferr <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/01/20 19:59:29 by pedrferr          #+#    #+#             */
+/*   Updated: 2026/01/20 19:59:32 by pedrferr         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "minitalk.h"
 
 void	ft_putnbr_fd(int n, int fd)
@@ -17,7 +29,7 @@ void	ft_putnbr_fd(int n, int fd)
 	write(1, &c, fd);
 }
 
-int	is_digits(char *s)
+static int	is_digits(char *s)
 {
 	int	i;
 
@@ -39,17 +51,17 @@ pid_t	parse_pid(char *s)
 	int		i;
 
 	if (!is_digits(s))
-		return ((pid_t)-1);
+		return ((pid_t) - 1);
 	n = 0;
 	i = 0;
 	while (s[i])
 	{
 		n = (n * 10) + (s[i] - '0');
 		if (n > 2147483647)
-			return ((pid_t)-1);
+			return ((pid_t) - 1);
 		i++;
 	}
 	if (n <= 0)
-		return ((pid_t)-1);
+		return ((pid_t) - 1);
 	return ((pid_t)n);
 }
